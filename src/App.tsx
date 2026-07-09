@@ -33,7 +33,6 @@ function App() {
     window.scrollTo(0, 0);
   }, []);
 
-  // FIX: Handle both Add and Update logic
   const handleSaveItem = (itemData: any) => {
     if (editItemId) {
       inventory.updateItem(editItemId, itemData);
@@ -134,7 +133,6 @@ function App() {
 
   return (
     <div className={`min-h-screen transition-colors ${darkMode ? 'dark bg-gray-900' : 'bg-gray-50'}`}>
-      {/* Mobile Header */}
       <header className="lg:hidden sticky top-0 z-50 bg-white dark:bg-gray-800 border-b dark:border-gray-700 px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -143,30 +141,18 @@ function App() {
             </div>
             <span className="font-bold text-lg text-gray-900 dark:text-white">LifeVault</span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </Button>
         </div>
-
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="mt-3 pb-2 space-y-1">
             {navItems.map(item => (
-              <button
-                key={item.page}
-                onClick={() => navigate(item.page)}
+              <button key={item.page} onClick={() => navigate(item.page)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  currentPage === item.page
-                    ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
+                  currentPage === item.page ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}>
+                <item.icon className="w-5 h-5" /> {item.label}
               </button>
             ))}
           </nav>
@@ -174,7 +160,6 @@ function App() {
       </header>
 
       <div className="flex max-w-7xl mx-auto">
-        {/* Desktop Sidebar */}
         <aside className="hidden lg:flex flex-col w-64 sticky top-0 h-screen bg-white dark:bg-gray-800 border-r dark:border-gray-700">
           <div className="p-6">
             <div className="flex items-center gap-3">
@@ -187,24 +172,16 @@ function App() {
               </div>
             </div>
           </div>
-
           <nav className="flex-1 px-4 space-y-1">
             {navItems.map(item => (
-              <button
-                key={item.page}
-                onClick={() => navigate(item.page)}
+              <button key={item.page} onClick={() => navigate(item.page)}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  currentPage === item.page
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                {item.label}
+                  currentPage === item.page ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'
+                }`}>
+                <item.icon className="w-5 h-5" /> {item.label}
               </button>
             ))}
           </nav>
-
           <div className="p-4 border-t dark:border-gray-700">
             <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-4 text-white">
               <p className="text-sm font-semibold mb-1">Pro Tip</p>
@@ -213,22 +190,16 @@ function App() {
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className="flex-1 min-h-screen">
-          <div className="px-4 py-6 md:px-8 md:py-8">
-            {renderPage()}
-          </div>
+          <div className="px-4 py-6 md:px-8 md:py-8">{renderPage()}</div>
         </main>
       </div>
 
-      {/* Clear All Dialog */}
       <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="text-red-600">Clear All Data</DialogTitle>
-            <DialogDescription>
-              This will permanently delete all your inventory items and maintenance tasks. This action cannot be undone.
-            </DialogDescription>
+            <DialogDescription>This will permanently delete all your inventory items and maintenance tasks. This action cannot be undone.</DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setClearDialogOpen(false)}>Cancel</Button>
