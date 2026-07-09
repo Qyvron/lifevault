@@ -33,9 +33,15 @@ function App() {
     window.scrollTo(0, 0);
   }, []);
 
-  const handleAddItem = (item: any) => {
-    inventory.addItem(item);
-    navigate('inventory');
+  // FIX: Handle both Add and Update logic
+  const handleSaveItem = (itemData: any) => {
+    if (editItemId) {
+      inventory.updateItem(editItemId, itemData);
+    } else {
+      inventory.addItem(itemData);
+    }
+    setEditItemId(undefined);
+    setCurrentPage('inventory');
   };
 
   const handleExport = () => {
@@ -112,7 +118,7 @@ function App() {
       case 'inventory':
         return <Inventory items={inventory.items} onDelete={inventory.deleteItem} onNavigate={navigate} darkMode={darkMode} />;
       case 'add':
-        return <AddItem onAdd={handleAddItem} onNavigate={navigate} editItem={getEditItem()} darkMode={darkMode} />;
+        return <AddItem onAdd={handleSaveItem} onNavigate={navigate} editItem={getEditItem()} darkMode={darkMode} />;
       case 'warranty':
         return <Warranty items={inventory.items} onNavigate={navigate} darkMode={darkMode} />;
       case 'maintenance':
@@ -146,6 +152,7 @@ function App() {
           </Button>
         </div>
 
+        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="mt-3 pb-2 space-y-1">
             {navItems.map(item => (
