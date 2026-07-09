@@ -19,16 +19,9 @@ export function useInventory() {
 
   const addItem = useCallback((item: Omit<InventoryItem, 'id' | 'createdAt' | 'updatedAt' | 'warrantyExpiry'>) => {
     const now = new Date().toISOString();
-    const warrantyExpiry = addMonths(item.purchaseDate, item.warrantyMonths);
-    
     const newItem: InventoryItem = {
-      ...item,
-      id: generateId(),
-      warrantyExpiry,
-      createdAt: now,
-      updatedAt: now,
+      ...item, id: generateId(), warrantyExpiry: addMonths(item.purchaseDate, item.warrantyMonths), createdAt: now, updatedAt: now,
     };
-    
     setItems(prev => [newItem, ...prev]);
     return newItem;
   }, [setItems]);
@@ -38,10 +31,7 @@ export function useInventory() {
       if (item.id === id) {
         const updated = { ...item, ...updates, updatedAt: new Date().toISOString() };
         if (updates.purchaseDate || updates.warrantyMonths) {
-          updated.warrantyExpiry = addMonths(
-            updates.purchaseDate || item.purchaseDate,
-            updates.warrantyMonths !== undefined ? updates.warrantyMonths : item.warrantyMonths
-          );
+          updated.warrantyExpiry = addMonths(updates.purchaseDate || item.purchaseDate, updates.warrantyMonths !== undefined ? updates.warrantyMonths : item.warrantyMonths);
         }
         return updated;
       }
@@ -54,9 +44,7 @@ export function useInventory() {
     setTasks(prev => prev.filter(task => task.itemId !== id));
   }, [setItems, setTasks]);
 
-  const getItemById = useCallback((id: string) => {
-    return items.find(item => item.id === id);
-  }, [items]);
+  const getItemById = useCallback((id: string) => items.find(item => item.id === id), [items]);
 
   const addTask = useCallback((task: Omit<MaintenanceTask, 'id' | 'nextDue' | 'isOverdue'>) => {
     const calculateNextDue = (lastDone: string, frequency: string, customDays?: number): string => {
@@ -70,17 +58,8 @@ export function useInventory() {
       }
       return d.toISOString().split('T')[0];
     };
-
     const nextDue = calculateNextDue(task.lastDone, task.frequency, task.customDays);
-    const isOverdue = new Date(nextDue) < new Date();
-
-    const newTask: MaintenanceTask = {
-      ...task,
-      id: generateId(),
-      nextDue,
-      isOverdue,
-    };
-
+    const newTask: MaintenanceTask = { ...task, id: generateId(), nextDue, isOverdue: new Date(nextDue) < new Date() };
     setTasks(prev => [newTask, ...prev]);
     return newTask;
   }, [setTasks]);
@@ -97,80 +76,35 @@ export function useInventory() {
           case 'yearly': d.setFullYear(d.getFullYear() + 1); break;
           case 'custom': if (task.customDays) d.setDate(d.getDate() + task.customDays); break;
         }
-        return {
-          ...task,
-          lastDone,
-          nextDue: d.toISOString().split('T')[0],
-          isOverdue: false,
-          completed: false,
-        };
+        return { ...task, lastDone, nextDue: d.toISOString().split('T')[0], isOverdue: false, completed: false };
       }
       return task;
     }));
   }, [setTasks]);
 
-  const deleteTask = useCallback((taskId: string) => {
-    setTasks(prev => prev.filter(task => task.id !== taskId));
-  }, [setTasks]);
+  const deleteTask = useCallback((taskId: string) => setTasks(prev => prev.filter(task => task.id !== taskId)), [setTasks]);
 
   const stats = useMemo(() => {
     const now = new Date();
     const totalValue = items.reduce((sum, item) => sum + item.currentValue, 0);
     const totalPurchase = items.reduce((sum, item) => sum + item.purchasePrice, 0);
-    
     const expiringWarranties = items.filter(item => {
       if (item.warrantyExpiry === 'Lifetime') return false;
-      const expiry = new Date(item.warrantyExpiry);
-      const daysUntil = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const daysUntil = Math.ceil((new Date(item.warrantyExpiry).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       return daysUntil >= 0 && daysUntil <= 90;
     });
-
-    const expiredWarranties = items.filter(item => {
-      if (item.warrantyExpiry === 'Lifetime') return false;
-      return new Date(item.warrantyExpiry) < now;
-    });
-
+    const expiredWarranties = items.filter(item => item.warrantyExpiry !== 'Lifetime' && new Date(item.warrantyExpiry) < now);
     const overdueTasks = tasks.filter(task => task.isOverdue && !task.completed);
     const upcomingTasks = tasks.filter(task => {
       if (task.isOverdue) return false;
-      const due = new Date(task.nextDue);
-      const daysUntil = Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const daysUntil = Math.ceil((new Date(task.nextDue).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       return daysUntil >= 0 && daysUntil <= 30;
     });
-
-    const categoryBreakdown = items.reduce((acc, item) => {
-      acc[item.category] = (acc[item.category] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    return {
-      totalItems: items.length,
-      totalValue,
-      totalPurchase,
-      valueChange: totalPurchase > 0 ? ((totalValue - totalPurchase) / totalPurchase * 100) : 0,
-      expiringWarranties: expiringWarranties.length,
-      expiredWarranties: expiredWarranties.length,
-      overdueTasks: overdueTasks.length,
-      upcomingTasks: upcomingTasks.length,
-      categoryBreakdown,
-    };
+    const categoryBreakdown = items.reduce((acc, item) => { acc[item.category] = (acc[item.category] || 0) + 1; return acc; }, {} as Record<string, number>);
+    return { totalItems: items.length, totalValue, totalPurchase, valueChange: totalPurchase > 0 ? ((totalValue - totalPurchase) / totalPurchase * 100) : 0, expiringWarranties: expiringWarranties.length, expiredWarranties: expiredWarranties.length, overdueTasks: overdueTasks.length, upcomingTasks: upcomingTasks.length, categoryBreakdown };
   }, [items, tasks]);
 
-  const recentItems = useMemo(() => {
-    return [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10);
-  }, [items]);
+  const recentItems = useMemo(() => [...items].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 10), [items]);
 
-  return {
-    items,
-    tasks,
-    addItem,
-    updateItem,
-    deleteItem,
-    getItemById,
-    addTask,
-    completeTask,
-    deleteTask,
-    stats,
-    recentItems,
-  };
+  return { items, tasks, addItem, updateItem, deleteItem, getItemById, addTask, completeTask, deleteTask, stats, recentItems };
 }

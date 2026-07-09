@@ -1,50 +1,20 @@
 export interface InventoryItem {
-  id: string;
-  name: string;
-  category: string;
-  room: string;
-  purchaseDate: string;
-  purchasePrice: number;
-  currentValue: number;
-  warrantyMonths: number;
-  warrantyExpiry: string;
-  serialNumber: string;
-  brand: string;
-  model: string;
-  description: string;
-  imageUrl: string;
-  receiptUrl: string;
-  createdAt: string;
-  updatedAt: string;
+  id: string; name: string; category: string; room: string;
+  purchaseDate: string; purchasePrice: number; currentValue: number;
+  warrantyMonths: number; warrantyExpiry: string; serialNumber: string;
+  brand: string; model: string; description: string; imageUrl: string;
+  receiptUrl: string; createdAt: string; updatedAt: string;
 }
 
 export interface MaintenanceTask {
-  id: string;
-  itemId: string;
-  itemName: string;
-  title: string;
-  description: string;
-  frequency: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
-  customDays?: number;
-  lastDone: string;
-  nextDue: string;
-  isOverdue: boolean;
-  priority: 'low' | 'medium' | 'high';
-  completed: boolean;
+  id: string; itemId: string; itemName: string; title: string;
+  description: string; frequency: 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'custom';
+  customDays?: number; lastDone: string; nextDue: string; isOverdue: boolean;
+  priority: 'low' | 'medium' | 'high'; completed: boolean;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-}
-
-export interface Room {
-  id: string;
-  name: string;
-  icon: string;
-}
+export interface Category { id: string; name: string; icon: string; color: string; }
+export interface Room { id: string; name: string; icon: string; }
 
 export const DEFAULT_CATEGORIES: Category[] = [
   { id: 'electronics', name: 'Electronics', icon: 'Monitor', color: '#3B82F6' },
@@ -72,16 +42,11 @@ export const DEFAULT_ROOMS: Room[] = [
 ];
 
 export const WARRANTY_PERIODS = [
-  { value: 0, label: 'No Warranty' },
-  { value: 3, label: '3 Months' },
-  { value: 6, label: '6 Months' },
-  { value: 12, label: '1 Year' },
-  { value: 24, label: '2 Years' },
-  { value: 36, label: '3 Years' },
-  { value: 48, label: '4 Years' },
-  { value: 60, label: '5 Years' },
-  { value: 120, label: '10 Years' },
-  { value: -1, label: 'Lifetime' },
+  { value: 0, label: 'No Warranty' }, { value: 3, label: '3 Months' },
+  { value: 6, label: '6 Months' }, { value: 12, label: '1 Year' },
+  { value: 24, label: '2 Years' }, { value: 36, label: '3 Years' },
+  { value: 48, label: '4 Years' }, { value: 60, label: '5 Years' },
+  { value: 120, label: '10 Years' }, { value: -1, label: 'Lifetime' },
 ];
 
 export const MAINTENANCE_PRESETS = [

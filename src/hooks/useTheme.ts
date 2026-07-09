@@ -9,16 +9,11 @@ export function useTheme() {
 
   useEffect(() => {
     localStorage.setItem('lifevault_darkmode', JSON.stringify(darkMode));
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (darkMode) document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  const toggleDarkMode = useCallback(() => {
-    setDarkMode((prev: boolean) => !prev);
-  }, []);
+  const toggleDarkMode = useCallback(() => setDarkMode((prev: boolean) => !prev), []);
 
   return { darkMode, toggleDarkMode };
 }

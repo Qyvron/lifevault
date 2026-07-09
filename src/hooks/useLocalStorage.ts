@@ -4,9 +4,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
   const getStoredValue = useCallback((): T => {
     try {
       const item = window.localStorage.getItem(key);
-      if (item) {
-        return JSON.parse(item);
-      }
+      if (item) return JSON.parse(item);
     } catch (error) {
       console.warn(`Error reading localStorage key "${key}":`, error);
     }
@@ -15,9 +13,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
 
   const [storedValue, setStoredValue] = useState<T>(getStoredValue);
 
-  useEffect(() => {
-    setStoredValue(getStoredValue());
-  }, [getStoredValue]);
+  useEffect(() => { setStoredValue(getStoredValue()); }, [getStoredValue]);
 
   const setValue = useCallback((value: T | ((prev: T) => T)) => {
     try {
