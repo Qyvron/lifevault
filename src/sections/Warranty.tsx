@@ -6,197 +6,48 @@ import { Button } from '@/components/ui/button';
 import type { InventoryItem } from '@/types';
 import { Shield, ShieldAlert, ShieldCheck, Clock } from 'lucide-react';
 
-interface WarrantyProps {
-  items: InventoryItem[];
-  onNavigate: (page: string) => void;
-  darkMode: boolean;
-}
+interface WarrantyProps { items: InventoryItem[]; onNavigate: (page: string) => void; darkMode: boolean; }
 
 export default function Warranty({ items, onNavigate, darkMode }: WarrantyProps) {
-  const getDaysUntil = (dateStr: string) => {
-    if (dateStr === 'Lifetime') return Infinity;
-    return Math.ceil((new Date(dateStr).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  };
-
-  const warrantyGroups = useMemo(() => {
-    const groups = {
-      expired: [] as InventoryItem[],
-      expiring30: [] as InventoryItem[],
-      expiring90: [] as InventoryItem[],
-      active: [] as InventoryItem[],
-      lifetime: [] as InventoryItem[],
-    };
-
-    items.forEach(item => {
-      if (item.warrantyExpiry === 'Lifetime') {
-        groups.lifetime.push(item);
-        return;
-      }
-
-      const days = getDaysUntil(item.warrantyExpiry);
-      if (days < 0) groups.expired.push(item);
-      else if (days <= 30) groups.expiring30.push(item);
-      else if (days <= 90) groups.expiring90.push(item);
-      else groups.active.push(item);
-    });
-
-    return groups;
+  const getDays = (d: string) => d === 'Lifetime' ? Infinity : Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
+  const groups = useMemo(() => {
+    const g = { expired: [] as InventoryItem[], expiring30: [] as InventoryItem[], expiring90: [] as InventoryItem[], active: [] as InventoryItem[], lifetime: [] as InventoryItem[] };
+    items.forEach(item => { if (item.warrantyExpiry === 'Lifetime') { g.lifetime.push(item); return; } const d = getDays(item.warrantyExpiry); if (d < 0) g.expired.push(item); else if (d <= 30) g.expiring30.push(item); else if (d <= 90) g.expiring90.push(item); else g.active.push(item); });
+    return g;
   }, [items]);
+  const getProg = (pd: string, wm: number) => { if (wm < 0) return 100; const s = new Date(pd).getTime(), e = s + wm * 30 * 86400000; return Math.min(Math.max(((Date.now() - s) / (e - s)) * 100, 0), 100); };
 
-  const getProgress = (purchaseDate: string, warrantyMonths: number) => {
-    if (warrantyMonths < 0) return 100;
-    const start = new Date(purchaseDate).getTime();
-    const end = start + warrantyMonths * 30 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const progress = ((now - start) / (end - start)) * 100;
-    return Math.min(Math.max(progress, 0), 100);
-  };
-
-  const WarrantyCard = ({ item, status }: { item: InventoryItem; status: 'expired' | 'warning' | 'caution' | 'active' | 'lifetime' }) => {
-    const days = getDaysUntil(item.warrantyExpiry);
-    const progress = getProgress(item.purchaseDate, item.warrantyMonths);
-
-    const statusConfig = {
-      expired: { icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', badge: 'Expired', badgeColor: 'destructive' as const },
-      warning: { icon: ShieldAlert, color: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', badge: `${days}d left`, badgeColor: 'destructive' as const },
-      caution: { icon: Clock, color: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', badge: `${days}d left`, badgeColor: 'default' as const },
-      active: { icon: ShieldCheck, color: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', badge: `${Math.floor(days / 30)}mo left`, badgeColor: 'outline' as const },
-      lifetime: { icon: Shield, color: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', badge: 'Lifetime', badgeColor: 'secondary' as const },
-    };
-
-    const config = statusConfig[status];
-    const Icon = config.icon;
-
+  const WCard = ({ item, status }: { item: InventoryItem; status: 'expired' | 'warning' | 'caution' | 'active' | 'lifetime' }) => {
+    const days = getDays(item.warrantyExpiry);
+    const prog = getProg(item.purchaseDate, item.warrantyMonths);
+    const cfg = { expired: { i: ShieldAlert, co: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', b: 'Expired', bc: 'destructive' as const }, warning: { i: ShieldAlert, co: 'text-red-500', bg: 'bg-red-50 dark:bg-red-900/20', b: `${days}d left`, bc: 'destructive' as const }, caution: { i: Clock, co: 'text-amber-500', bg: 'bg-amber-50 dark:bg-amber-900/20', b: `${days}d left`, bc: 'default' as const }, active: { i: ShieldCheck, co: 'text-emerald-500', bg: 'bg-emerald-50 dark:bg-emerald-900/20', b: `${Math.floor(days / 30)}mo left`, bc: 'outline' as const }, lifetime: { i: Shield, co: 'text-blue-500', bg: 'bg-blue-50 dark:bg-blue-900/20', b: 'Lifetime', bc: 'secondary' as const } }[status];
+    const I = cfg.i;
     return (
-      <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : config.bg} transition-all hover:shadow-md`}>
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <div className={`p-2 rounded-lg ${config.bg}`}>
-              <Icon className={`w-5 h-5 ${config.color}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</h3>
-                <Badge variant={config.badgeColor} className="text-xs flex-shrink-0 ml-2">{config.badge}</Badge>
-              </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{item.brand} {item.model}</p>
-              <div className="mt-2">
-                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  <span>Warranty Progress</span>
-                  <span>{Math.round(progress)}%</span>
-                </div>
-                <Progress value={progress} className={`h-1.5 ${status === 'expired' ? 'bg-red-200' : status === 'warning' ? 'bg-red-200' : status === 'caution' ? 'bg-amber-200' : ''}`} />
-              </div>
-              <div className="flex justify-between mt-2 text-sm">
-                <span className="text-gray-500 dark:text-gray-400">Purchased: {item.purchaseDate}</span>
-                <span className="text-gray-500 dark:text-gray-400">Expires: {item.warrantyExpiry}</span>
-              </div>
-            </div>
+      <Card className={`${darkMode ? 'bg-gray-800 border-gray-700' : cfg.bg} transition-all hover:shadow-md`}><CardContent className="p-4">
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg ${cfg.bg}`}><I className={`w-5 h-5 ${cfg.co}`} /></div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between"><h3 className="font-semibold text-gray-900 dark:text-white truncate">{item.name}</h3><Badge variant={cfg.bc} className="text-xs flex-shrink-0 ml-2">{cfg.b}</Badge></div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{item.brand} {item.model}</p>
+            <div className="mt-2"><div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1"><span>Warranty Progress</span><span>{Math.round(prog)}%</span></div><Progress value={prog} className={`h-1.5 ${status === 'expired' || status === 'warning' ? 'bg-red-200' : status === 'caution' ? 'bg-amber-200' : ''}`} /></div>
+            <div className="flex justify-between mt-2 text-sm"><span className="text-gray-500 dark:text-gray-400">Purchased: {item.purchaseDate}</span><span className="text-gray-500 dark:text-gray-400">Expires: {item.warrantyExpiry}</span></div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </CardContent></Card>
     );
   };
 
   return (
     <div className="space-y-6 pb-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Warranty Tracker</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Monitor warranty status for all your items</p>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        {[
-          { label: 'Expired', count: warrantyGroups.expired.length, color: 'bg-red-500' },
-          { label: '< 30 Days', count: warrantyGroups.expiring30.length, color: 'bg-red-400' },
-          { label: '< 90 Days', count: warrantyGroups.expiring90.length, color: 'bg-amber-500' },
-          { label: 'Active', count: warrantyGroups.active.length, color: 'bg-emerald-500' },
-          { label: 'Lifetime', count: warrantyGroups.lifetime.length, color: 'bg-blue-500' },
-        ].map((stat, i) => (
-          <Card key={i} className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}>
-            <CardContent className="p-3 text-center">
-              <div className={`w-3 h-3 rounded-full ${stat.color} mx-auto mb-1`} />
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{stat.count}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{stat.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {items.length === 0 ? (
-        <div className="text-center py-12">
-          <Shield className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500 dark:text-gray-400 text-lg">No items to track</p>
-          <Button onClick={() => onNavigate('add')} variant="outline" className="mt-3">
-            Add Your First Item
-          </Button>
-        </div>
-      ) : (
+      <div><h1 className="text-2xl font-bold text-gray-900 dark:text-white">Warranty Tracker</h1><p className="text-sm text-gray-500 dark:text-gray-400">Monitor warranty status for all your items</p></div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[{ l: 'Expired', c: groups.expired.length, co: 'bg-red-500' }, { l: '< 30 Days', c: groups.expiring30.length, co: 'bg-red-400' }, { l: '< 90 Days', c: groups.expiring90.length, co: 'bg-amber-500' }, { l: 'Active', c: groups.active.length, co: 'bg-emerald-500' }, { l: 'Lifetime', c: groups.lifetime.length, co: 'bg-blue-500' }].map((s, i) => <Card key={i} className={darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'}><CardContent className="p-3 text-center"><div className={`w-3 h-3 rounded-full ${s.co} mx-auto mb-1`} /><p className="text-xl font-bold text-gray-900 dark:text-white">{s.c}</p><p className="text-xs text-gray-500 dark:text-gray-400">{s.l}</p></CardContent></Card>)}</div>
+      {items.length === 0 ? <div className="text-center py-12"><Shield className="w-16 h-16 mx-auto mb-4 text-gray-300" /><p className="text-gray-500 dark:text-gray-400 text-lg">No items to track</p><Button onClick={() => onNavigate('add')} variant="outline" className="mt-3">Add Your First Item</Button></div> : (
         <div className="space-y-6">
-          {warrantyGroups.expired.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-red-600 mb-3 flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5" /> Expired Warranties ({warrantyGroups.expired.length})
-              </h2>
-              <div className="space-y-3">
-                {warrantyGroups.expired.map(item => (
-                  <WarrantyCard key={item.id} item={item} status="expired" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {warrantyGroups.expiring30.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-red-500 mb-3 flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5" /> Expiring Soon — 30 Days ({warrantyGroups.expiring30.length})
-              </h2>
-              <div className="space-y-3">
-                {warrantyGroups.expiring30.map(item => (
-                  <WarrantyCard key={item.id} item={item} status="warning" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {warrantyGroups.expiring90.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-amber-600 mb-3 flex items-center gap-2">
-                <Clock className="w-5 h-5" /> Expiring — 90 Days ({warrantyGroups.expiring90.length})
-              </h2>
-              <div className="space-y-3">
-                {warrantyGroups.expiring90.map(item => (
-                  <WarrantyCard key={item.id} item={item} status="caution" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {warrantyGroups.active.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-emerald-600 mb-3 flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5" /> Active Warranties ({warrantyGroups.active.length})
-              </h2>
-              <div className="space-y-3">
-                {warrantyGroups.active.map(item => (
-                  <WarrantyCard key={item.id} item={item} status="active" />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {warrantyGroups.lifetime.length > 0 && (
-            <div>
-              <h2 className="text-lg font-semibold text-blue-600 mb-3 flex items-center gap-2">
-                <Shield className="w-5 h-5" /> Lifetime Warranties ({warrantyGroups.lifetime.length})
-              </h2>
-              <div className="space-y-3">
-                {warrantyGroups.lifetime.map(item => (
-                  <WarrantyCard key={item.id} item={item} status="lifetime" />
-                ))}
-              </div>
-            </div>
-          )}
+          {groups.expired.length > 0 && <div><h2 className="text-lg font-semibold text-red-600 mb-3 flex items-center gap-2"><ShieldAlert className="w-5 h-5" />Expired Warranties ({groups.expired.length})</h2><div className="space-y-3">{groups.expired.map(i => <WCard key={i.id} item={i} status="expired" />)}</div></div>}
+          {groups.expiring30.length > 0 && <div><h2 className="text-lg font-semibold text-red-500 mb-3 flex items-center gap-2"><ShieldAlert className="w-5 h-5" />Expiring Soon &mdash; 30 Days ({groups.expiring30.length})</h2><div className="space-y-3">{groups.expiring30.map(i => <WCard key={i.id} item={i} status="warning" />)}</div></div>}
+          {groups.expiring90.length > 0 && <div><h2 className="text-lg font-semibold text-amber-600 mb-3 flex items-center gap-2"><Clock className="w-5 h-5" />Expiring &mdash; 90 Days ({groups.expiring90.length})</h2><div className="space-y-3">{groups.expiring90.map(i => <WCard key={i.id} item={i} status="caution" />)}</div></div>}
+          {groups.active.length > 0 && <div><h2 className="text-lg font-semibold text-emerald-600 mb-3 flex items-center gap-2"><ShieldCheck className="w-5 h-5" />Active Warranties ({groups.active.length})</h2><div className="space-y-3">{groups.active.map(i => <WCard key={i.id} item={i} status="active" />)}</div></div>}
+          {groups.lifetime.length > 0 && <div><h2 className="text-lg font-semibold text-blue-600 mb-3 flex items-center gap-2"><Shield className="w-5 h-5" />Lifetime Warranties ({groups.lifetime.length})</h2><div className="space-y-3">{groups.lifetime.map(i => <WCard key={i.id} item={i} status="lifetime" />)}</div></div>}
         </div>
       )}
     </div>
